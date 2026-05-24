@@ -1,0 +1,500 @@
+        .toggle {
+            width: 50px;
+            height: 26px;
+            background: var(--card-bg);
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--text-muted);
+            clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+        }
+        .toggle.active {
+            background: rgba(247,230,0,0.2);
+            border-color: var(--neon-yellow);
+        }
+        .toggle.active::after {
+            left: 26px;
+            background: var(--neon-yellow);
+            box-shadow: 0 0 10px var(--neon-yellow);
+        }
+        .customize-btn {
+            position: fixed;
+            right: 2rem;
+            bottom: 2rem;
+            width: 60px;
+            height: 60px;
+            clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+            background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink));
+            border: none;
+            color: var(--dark-bg);
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(247,230,0,0.4);
+            z-index: 1400;
+            transition: all 0.3s;
+            animation: pulse-glow 2s infinite;
+        }
+        .customize-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+            animation: none;
+            box-shadow: 0 0 40px rgba(247,230,0,0.6);
+        }
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        .menu-toggle span {
+            width: 25px;
+            height: 2px;
+            background: var(--neon-yellow);
+            box-shadow: 0 0 5px var(--neon-yellow);
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero { padding: 0 1.5rem 2rem; }
+            .carousel-main { height: 350px; }
+            .carousel-side { display: none; }
+            .carousel-title { font-size: 1.5rem; }
+            .section { padding: 2rem 1.5rem; }
+            .games-grid { grid-template-columns: 1fr; }
+            .cart-sidebar, .customize-panel { width: 100%; }
+            .modal { margin: 1rem; }
+            .footer-bottom { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navegacao -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="logo" onclick="navigateTo('home')">◢ GAMEHUB ◣</div>
+            <ul class="nav-links">
+                <li><a href="#" onclick="navigateTo('home')">Início</a></li>
+                <li><a href="#" onclick="navigateTo('store')">Loja</a></li>
+                <li><a href="#" onclick="navigateTo('library')">Biblioteca</a></li>
+                <li><a href="#" onclick="showToast('Em breve!', 'info')">Comunidade</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="btn-cyber btn-cyber-outline" onclick="toggleCart()" title="Carrinho">
+                    🛒 <span id="cart-count" style="background: var(--neon-yellow); color: var(--dark-bg); clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px); padding: 2px 7px; font-size: 0.7rem; font-family: Orbitron; margin-left: 6px;">0</span>
+                </button>
+                <div id="auth-buttons">
+                    <button class="btn-cyber btn-cyber-secondary" onclick="openAuthModal('login')">Entrar</button>
+                    <button class="btn-cyber btn-cyber-primary" onclick="openAuthModal('register')">Cadastrar</button>
+                </div>
+                <div id="user-menu-container" style="display: none;">
+                    <div class="user-menu" onclick="toggleUserDropdown()">
+                        <div class="user-avatar" id="user-avatar">U</div>
+                        <span class="user-name" id="user-name" style="color: var(--text-primary); font-weight: 600; font-family: Orbitron; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Usuário</span>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <div class="user-dropdown-item" onclick="navigateTo('library')">📚 Minha Biblioteca</div>
+                            <div class="user-dropdown-item" onclick="showToast('Perfil em breve!', 'info')">👤 Perfil</div>
+                            <div class="user-dropdown-item" onclick="showToast('Configurações em breve!', 'info')">⚙️ Configurações</div>
+                            <div class="user-dropdown-divider"></div>
+                            <div class="user-dropdown-item" onclick="logout()" style="color: var(--neon-pink);">🚪 Sair</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="menu-toggle" onclick="showToast('Menu mobile em desenvolvimento!', 'warning')">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTEUDO DINAMICO -->
+    <div id="app-content"></div>
+
+    <!-- Modal de Detalhes do Jogo -->
+    <div class="modal-overlay" id="game-modal">
+        <div class="modal">
+            <div class="modal-header" id="game-modal-header">
+                <button class="modal-close" onclick="closeModal('game-modal')">✕</button>
+                <div class="modal-header-overlay"></div>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Autenticacao -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header" style="height: 120px; background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink)); display: flex; align-items: center; justify-content: center;">
+                <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+                <span style="font-size: 4rem; filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));">◢◣</span>
+            </div>
+            <div style="padding: 2rem;">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+                    <button class="auth-tab" onclick="switchAuthTab('register')">Cadastrar</button>
+                </div>
+                <form class="auth-form active" id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="seu@email.com" required>
+                        <div class="form-error" id="login-email-error">Email inválido</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Senha</label>
+                        <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                        <div class="form-error" id="login-password-error">Senha incorreta</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem;">
+                            <input type="checkbox" id="login-remember" style="accent-color: var(--neon-yellow);"> Lembrar-me
+                        </label>
+                        <a href="#" style="color: var(--neon-yellow); text-decoration: none; font-size: 0.85rem; font-family: Orbitron;">Esqueceu a senha?</a>
+                    </div>
+                    <button type="submit" class="btn-cyber btn-cyber-primary" style="width: 100%;" id="login-btn">
+                        <span id="login-btn-text">Entrar</span>
+                    </button>
+                </form>
+                <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="register-name" class="form-input" placeholder="Seu nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome de Usuário</label>
+                        <input type="text" id="register-username" class="form-input" placeholder="gamer123" required>
+                        <div class="form-hint">Apenas letras, números e underline</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="register-email" class="form-input" placeholder="seu@email.com" required>
+                        <div class="form-error" id="register-email-error">Email inválido</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Senha</label>
+                        <input type="password" id="register-password" class="form-input" placeholder="••••••••" required oninput="checkPasswordStrength(this.value)">
+                        <div class="password-strength"><div class="password-strength-bar" id="password-strength-bar"></div></div>
+                        <div class="form-hint">Mínimo 8 caracteres, com letras e números</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmar Senha</label>
+                        <input type="password" id="register-confirm" class="form-input" placeholder="••••••••" required>
+                        <div class="form-error" id="register-confirm-error">As senhas não coincidem</div>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem;">
+                            <input type="checkbox" id="register-terms" required style="margin-top: 0.2rem; accent-color: var(--neon-yellow);">
+                            <span>Aceito os <a href="#" style="color: var(--neon-yellow);">Termos de Uso</a> e <a href="#" style="color: var(--neon-yellow);">Política de Privacidade</a></span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-cyber btn-cyber-primary" style="width: 100%;" id="register-btn">
+                        <span id="register-btn-text">Criar Conta</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Checkout -->
+    <div class="modal-overlay" id="checkout-modal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header" style="height: 80px; background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink)); display: flex; align-items: center; justify-content: center;">
+                <button class="modal-close" onclick="closeModal('checkout-modal')">✕</button>
+                <h2 style="color: var(--dark-bg); font-size: 1.3rem; font-family: Orbitron; text-transform: uppercase; letter-spacing: 2px;">◢ Finalizar Compra ◣</h2>
+            </div>
+            <div class="modal-body" id="checkout-body"></div>
+        </div>
+    </div>
+
+    <!-- Carrinho Sidebar -->
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3>◢ Carrinho ◣</h3>
+            <button class="customize-close" onclick="toggleCart()">✕</button>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <div class="cart-empty">
+                <div class="cart-empty-icon">🛒</div>
+                <p>Seu carrinho está vazio</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Adicione alguns jogos!</p>
+            </div>
+        </div>
+        <div class="cart-footer" id="cart-footer" style="display: none;">
+            <div class="cart-coupon">
+                <input type="text" id="coupon-code" placeholder="Código do cupom">
+                <button class="btn-cyber btn-cyber-secondary" onclick="applyCoupon()" style="padding: 0.6rem 1rem;">Aplicar</button>
+            </div>
+            <div class="cart-total"><span>Subtotal:</span><span id="cart-subtotal">R$ 0,00</span></div>
+            <div class="cart-total" id="cart-discount-row" style="display: none;">
+                <span style="color: var(--neon-green);">Desconto:</span>
+                <span id="cart-discount" style="color: var(--neon-green);">-R$ 0,00</span>
+            </div>
+            <div class="cart-total" style="font-size: 1.1rem; border-top: 1px solid rgba(247,230,0,0.2); padding-top: 0.5rem; margin-top: 0.5rem;">
+                <span>Total:</span><span id="cart-total">R$ 0,00</span>
+            </div>
+            <button class="btn-cyber btn-cyber-primary" style="width: 100%; margin-top: 1rem;" onclick="openCheckout()">Finalizar Compra</button>
+        </div>
+    </div>
+
+    <!-- Painel de Personalizacao -->
+    <button class="customize-btn" onclick="toggleCustomize()" title="Personalizar">⚙️</button>
+    <div class="customize-panel" id="customize-panel">
+        <div class="customize-header">
+            <h3>◢ Personalizar ◣</h3>
+            <button class="customize-close" onclick="toggleCustomize()">✕</button>
+        </div>
+        <div class="customize-section">
+            <h4>Cor Neon Primária</h4>
+            <div class="color-picker">
+                <div class="color-option active" style="background: #f7e600;" data-color="#f7e600" onclick="setPrimaryColor(this)"></div>
+                <div class="color-option" style="background: #ff2a6d;" data-color="#ff2a6d" onclick="setPrimaryColor(this)"></div>
+                <div class="color-option" style="background: #05d9e8;" data-color="#05d9e8" onclick="setPrimaryColor(this)"></div>
+                <div class="color-option" style="background: #39ff14;" data-color="#39ff14" onclick="setPrimaryColor(this)"></div>
+                <div class="color-option" style="background: #b026ff;" data-color="#b026ff" onclick="setPrimaryColor(this)"></div>
+                <div class="color-option" style="background: #ff6600;" data-color="#ff6600" onclick="setPrimaryColor(this)"></div>
+            </div>
+        </div>
+        <div class="customize-section">
+            <h4>Cor Neon Secundária</h4>
+            <div class="color-picker">
+                <div class="color-option" style="background: #ff2a6d;" data-color="#ff2a6d" onclick="setSecondaryColor(this)"></div>
+                <div class="color-option active" style="background: #f7e600;" data-color="#f7e600" onclick="setSecondaryColor(this)"></div>
+                <div class="color-option" style="background: #05d9e8;" data-color="#05d9e8" onclick="setSecondaryColor(this)"></div>
+                <div class="color-option" style="background: #b026ff;" data-color="#b026ff" onclick="setSecondaryColor(this)"></div>
+            </div>
+        </div>
+        <div class="customize-section">
+            <h4>Animações</h4>
+            <div class="toggle-switch">
+                <span>Efeitos Visuais</span>
+                <div class="toggle active" id="anim-toggle" onclick="toggleAnimations()"></div>
+            </div>
+        </div>
+        <div class="customize-section">
+            <h4>Scanlines</h4>
+            <div class="toggle-switch">
+                <span>Ativar Scanlines</span>
+                <div class="toggle active" id="scanlines-toggle" onclick="toggleScanlines()"></div>
+            </div>
+        </div>
+        <button class="btn-cyber btn-cyber-secondary" style="width: 100%; margin-top: 1rem;" onclick="resetCustomization()">Resetar Padrões</button>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo" style="font-size: 1.5rem;">◢ GAMEHUB ◣</div>
+                <p>A melhor plataforma para descobrir, comprar e jogar seus títulos favoritos. Junte-se a milhões de jogadores ao redor do mundo.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Plataforma</h4>
+                <ul>
+                    <li><a href="#" onclick="navigateTo('store')">Todos os Jogos</a></li>
+                    <li><a href="#" onclick="showToast('Lançamentos em breve!', 'info')">Lançamentos</a></li>
+                    <li><a href="#" onclick="showToast('Ofertas em breve!', 'info')">Ofertas</a></li>
+                    <li><a href="#" onclick="showToast('Categorias em breve!', 'info')">Categorias</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Comunidade</h4>
+                <ul>
+                    <li><a href="#" onclick="showToast('Fóruns em breve!', 'info')">Fóruns</a></li>
+                    <li><a href="#" onclick="showToast('Discord em breve!', 'info')">Discord</a></li>
+                    <li><a href="#" onclick="showToast('Torneios em breve!', 'info')">Torneios</a></li>
+                    <li><a href="#" onclick="showToast('Streaming em breve!', 'info')">Streaming</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Suporte</h4>
+                <ul>
+                    <li><a href="#" onclick="showToast('Central de Ajuda em breve!', 'info')">Central de Ajuda</a></li>
+                    <li><a href="#" onclick="showToast('Contato em breve!', 'info')">Contato</a></li>
+                    <li><a href="#" onclick="showToast('Política de Privacidade em breve!', 'info')">Política de Privacidade</a></li>
+                    <li><a href="#" onclick="showToast('Termos de Uso em breve!', 'info')">Termos de Uso</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 GameHub. Todos os direitos reservados.</p>
+            <div class="social-links">
+                <a href="#">📘</a><a href="#">🐦</a><a href="#">📸</a><a href="#">🎥</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+
+// ============================================
+// ESTADO GLOBAL E DADOS
+// ============================================
+let cart = JSON.parse(localStorage.getItem('gamehub_cart') || '[]');
+let currentUser = JSON.parse(localStorage.getItem('gamehub_user') || 'null');
+let animationsEnabled = true;
+let scanlinesEnabled = true;
+let currentCarouselIndex = 0;
+
+const games = [
+    {
+        id: 1, title: "Forza Horizon 6", genre: "Corrida", rating: 4.9, price: 249.90, originalPrice: 299.90,
+        badge: "gamepass", description: "Descubra o Japão de tirar o fôlego e vire uma lenda das corridas.",
+        features: ["Mundo aberto", "450+ carros", "Ray Tracing", "4K 60fps"],
+        image: "🏎️", playtime: 0, purchased: false,
+        color: "#f7e600", bgGradient: "linear-gradient(135deg, #1a1a2e, #2d1b69)"
+    },
+    {
+        id: 2, title: "The Blood of Dawnwalker", genre: "RPG", rating: 4.7, price: 279.90, originalPrice: null,
+        badge: "new", description: "Uma jornada sombria por um mundo dominado por vampiros ancestrais.",
+        features: ["Mundo aberto", "Sistema de moralidade", "Crafting avançado", "Multiplayer"],
+        image: "🧛", playtime: 0, purchased: false,
+        color: "#ff2a6d", bgGradient: "linear-gradient(135deg, #1a0a0a, #4a0e0e)"
+    },
+    {
+        id: 3, title: "UFC 6", genre: "Luta", rating: 4.5, price: 199.90, originalPrice: null,
+        badge: "new", description: "O octógono nunca foi tão real. Lute como os maiores campeões.",
+        features: ["Career Mode", "Online Ranked", "Realistic Physics", "60fps"],
+        image: "🥊", playtime: 0, purchased: false,
+        color: "#05d9e8", bgGradient: "linear-gradient(135deg, #0a1a1a, #0e3a4a)"
+    },
+    {
+        id: 4, title: "Age of Empires V", genre: "Estratégia", rating: 4.8, price: 0, originalPrice: null,
+        badge: "gamepass", description: "Construa impérios que perdurarão através dos séculos.",
+        features: ["Gratuito com GP", "8 civilizações", "Campanha épica", "Co-op"],
+        image: "🏰", playtime: 0, purchased: false,
+        color: "#39ff14", bgGradient: "linear-gradient(135deg, #0a1a0a, #0e4a0e)"
+    },
+    {
+        id: 5, title: "Cyber Odyssey 2077", genre: "RPG", rating: 4.9, price: 199.90, originalPrice: 349.90,
+        badge: "sale", description: "Explore Night City em sua versão definitiva com Ray Tracing Overdrive.",
+        features: ["Mundo aberto", "DLSS 3.5", "Ray Tracing", "Phantom Liberty"],
+        image: "🌆", playtime: 0, purchased: false,
+        color: "#f7e600", bgGradient: "linear-gradient(135deg, #1a1a0a, #4a4a0e)"
+    },
+    {
+        id: 6, title: "Halo Infinite 2", genre: "FPS", rating: 4.6, price: 0, originalPrice: null,
+        badge: "gamepass", description: "A Master Chief retorna em sua missão mais épica.",
+        features: ["Gratuito com GP", "Forge avançado", "Multiplayer 24v24", "Campanha co-op"],
+        image: "🪖", playtime: 0, purchased: false,
+        color: "#05d9e8", bgGradient: "linear-gradient(135deg, #0a0a1a, #0e0e4a)"
+    },
+    {
+        id: 7, title: "Starfield: Shattered Space", genre: "RPG", rating: 4.4, price: 129.90, originalPrice: null,
+        badge: "new", description: "Expansão épica que leva você além das fronteiras conhecidas.",
+        features: ["Nova galáxia", "Naves customizáveis", "Base building", "100+ planetas"],
+        image: "🚀", playtime: 0, purchased: false,
+        color: "#b026ff", bgGradient: "linear-gradient(135deg, #1a0a1a, #3a0e4a)"
+    },
+    {
+        id: 8, title: "Gears of War: E-Day", genre: "Ação", rating: 4.7, price: 249.90, originalPrice: null,
+        badge: "new", description: "O dia em que tudo mudou. A origem da guerra contra os Locust.",
+        features: ["Campanha co-op", "Horde Mode 5.0", "Unreal Engine 5", "60fps"],
+        image: "⚙️", playtime: 0, purchased: false,
+        color: "#ff6600", bgGradient: "linear-gradient(135deg, #1a0a0a, #4a1e0e)"
+    }
+];
+
+let library = JSON.parse(localStorage.getItem('gamehub_library') || '[]');
+
+// ============================================
+// UTILITÁRIOS
+// ============================================
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatPrice(price) {
+    if (price === 0) return 'GRÁTIS';
+    return 'R$ ' + price.toFixed(2).replace('.', ',');
+}
+
+// ============================================
+// NAVEGAÇÃO E RENDERIZAÇÃO
+// ============================================
+function navigateTo(page) {
+    const content = document.getElementById('app-content');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    switch(page) {
+        case 'home': renderHome(content); break;
+        case 'store': renderStore(content); break;
+        case 'library': renderLibrary(content); break;
+        default: renderHome(content);
+    }
+}
+
+function renderHome(container) {
+    const featured = games.slice(0, 3);
+    const popular = games.slice(3, 6);
+    container.innerHTML = `
+        <section class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-carousel">
+                <button class="carousel-nav carousel-prev" onclick="prevCarousel()">‹</button>
+                <div class="carousel-main" id="carousel-main">
+                    ${renderCarouselItem(featured[0], 0)}
+                </div>
+                <div class="carousel-side">
+                    ${featured.slice(1).map((g, i) => `
+                        <div class="side-card" onclick="setCarouselItem(${i + 1})">
+                            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:4rem;background:${g.bgGradient};">${g.image}</div>
+                            <div class="side-card-title">${escapeHtml(g.title)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="carousel-nav carousel-next" onclick="nextCarousel()">›</button>
+            </div>
+            <div class="carousel-indicators">
+                ${featured.map((_, i) => `<div class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="setCarouselItem(${i})"></div>`).join('')}
+            </div>
+        </section>
+        <div class="marquee-bar">
+            <div class="marquee-content">
+                <span>🔥 NOVOS LANÇAMENTOS DISPONÍVEIS</span>
+                <span>◢ GAME PASS ULTIMATE ◣</span>
+                <span>🎮 JOGUE MAIS DE 500 TÍTULOS</span>
+                <span>⚡ OFERTAS RELÂMPAGO ESTA SEMANA</span>
+                <span>🏆 TORNEIOS COM PREMIOS EM BREVE</span>
+                <span>🔥 NOVOS LANÇAMENTOS DISPONÍVEIS</span>
+                <span>◢ GAME PASS ULTIMATE ◣</span>
+                <span>🎮 JOGUE MAIS DE 500 TÍTULOS</span>
+                <span>⚡ OFERTAS RELÂMPAGO ESTA SEMANA</span>
+                <span>🏆 TORNEIOS COM PREMIOS EM BREVE</span>
+            </div>
+        </div>
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Novos Jogos Incríveis</h2>
+                <a href="#" class="section-link" onclick="navigateTo('store')">Comprar Tudo ›</a>
+            </div>
+            <div class="games-grid">
+                ${popular.map(g => createGameCard(g)).join('')}
+            </div>
+        </section>
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Destaques do Game Pass</h2>
+                <a href="#" class="section-link" onclick="showToast('Game Pass em breve!', 'info')">Ver Todos ›</a>
+            </div>
+            <div class="games-grid">
+                ${games.filter(g => g.badge === 'gamepass').map(g => createGameCard(g)).join('')}
+            </div>
+        </section>
+    `;
+}
+
+function renderCarouselItem(game, index) {
+    return `
+        <div style="width:100%;height:100%;position:relative;" data-index="${index}">

@@ -1,0 +1,173 @@
+        btnText.textContent = 'CRIAR CONTA';
+        closeModal('auth-modal');
+        updateAuthUI();
+        showToast('Bem-vindo, ' + name + '! Conta criada.', 'success');
+        document.getElementById('register-form').reset();
+        document.getElementById('password-strength-bar').className = 'password-strength-bar';
+    }, 1500);
+}
+
+function checkPasswordStrength(password) {
+    const bar = document.getElementById('password-strength-bar');
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    bar.className = 'password-strength-bar';
+    if (strength <= 1) bar.classList.add('weak');
+    else if (strength <= 2) bar.classList.add('medium');
+    else bar.classList.add('strong');
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('gamehub_user');
+    cart = [];
+    saveCart();
+    updateAuthUI();
+    updateCartUI();
+    showToast('Você saiu da conta!', 'info');
+    navigateTo('home');
+}
+
+function updateAuthUI() {
+    const authButtons = document.getElementById('auth-buttons');
+    const userMenu = document.getElementById('user-menu-container');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    if (currentUser) {
+        authButtons.style.display = 'none';
+        userMenu.style.display = 'block';
+        userAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+        userName.textContent = currentUser.name.split(' ')[0];
+    } else {
+        authButtons.style.display = 'flex';
+        userMenu.style.display = 'none';
+    }
+}
+
+function toggleUserDropdown() {
+    document.getElementById('user-dropdown').classList.toggle('active');
+}
+
+// ============================================
+// PERSONALIZAÇÃO
+// ============================================
+function toggleCustomize() {
+    document.getElementById('customize-panel').classList.toggle('open');
+}
+
+function setPrimaryColor(element) {
+    const color = element.dataset.color;
+    document.documentElement.style.setProperty('--neon-yellow', color);
+    element.parentElement.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    savePreference('primaryColor', color);
+}
+
+function setSecondaryColor(element) {
+    const color = element.dataset.color;
+    document.documentElement.style.setProperty('--neon-pink', color);
+    element.parentElement.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    savePreference('secondaryColor', color);
+}
+
+function toggleAnimations() {
+    const toggle = document.getElementById('anim-toggle');
+    toggle.classList.toggle('active');
+    animationsEnabled = toggle.classList.contains('active');
+    savePreference('animations', animationsEnabled);
+}
+
+function toggleScanlines() {
+    const toggle = document.getElementById('scanlines-toggle');
+    toggle.classList.toggle('active');
+    scanlinesEnabled = toggle.classList.contains('active');
+    document.body.style.setProperty('--scanline-opacity', scanlinesEnabled ? '0.4' : '0');
+    savePreference('scanlines', scanlinesEnabled);
+}
+
+function resetCustomization() {
+    document.documentElement.style.removeProperty('--neon-yellow');
+    document.documentElement.style.removeProperty('--neon-pink');
+    document.querySelectorAll('.color-option').forEach((el, i) => {
+        el.classList.toggle('active', i === 0 || i === 5);
+    });
+    localStorage.removeItem('gamehub_preferences');
+    showToast('Personalizações resetadas!', 'success');
+}
+
+function savePreference(key, value) {
+    const prefs = JSON.parse(localStorage.getItem('gamehub_preferences') || '{}');
+    prefs[key] = value;
+    localStorage.setItem('gamehub_preferences', JSON.stringify(prefs));
+}
+
+function loadSavedPreferences() {
+    const prefs = JSON.parse(localStorage.getItem('gamehub_preferences') || '{}');
+    if (prefs.primaryColor) document.documentElement.style.setProperty('--neon-yellow', prefs.primaryColor);
+    if (prefs.secondaryColor) document.documentElement.style.setProperty('--neon-pink', prefs.secondaryColor);
+    if (prefs.animations === false) {
+        animationsEnabled = false;
+        document.getElementById('anim-toggle').classList.remove('active');
+    }
+    if (prefs.scanlines === false) {
+        scanlinesEnabled = false;
+        document.getElementById('scanlines-toggle').classList.remove('active');
+        document.body.style.setProperty('--scanline-opacity', '0');
+    }
+}
+
+// ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    toast.innerHTML = '<span class="toast-icon">' + icons[type] + '</span><span>' + escapeHtml(message) + '</span>';
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+        closeModal(e.target.id);
+    }
+    const userMenu = document.querySelector('.user-menu');
+    const dropdown = document.getElementById('user-dropdown');
+    if (userMenu && dropdown && !userMenu.contains(e.target)) {
+        dropdown.classList.remove('active');
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(modal => closeModal(modal.id));
+        document.getElementById('cart-sidebar').classList.remove('open');
+        document.getElementById('customize-panel').classList.remove('open');
+    }
+});
+
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    loadSavedPreferences();
+    updateAuthUI();
+    updateCartUI();
+    navigateTo('home');
+});
+    </script>
+</body>
+</html>

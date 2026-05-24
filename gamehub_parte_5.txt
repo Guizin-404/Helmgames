@@ -1,0 +1,500 @@
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:8rem;background:${game.bgGradient};">
+                <span style="filter: drop-shadow(0 0 30px ${game.color});">${game.image}</span>
+            </div>
+            <div class="carousel-content">
+                <div class="carousel-badge">${game.badge === 'gamepass' ? 'JOGUE COM O GAME PASS' : game.badge === 'new' ? 'NOVO LANÇAMENTO' : 'PROMOÇÃO'}</div>
+                <h2 class="carousel-title">
+                    ${escapeHtml(game.title)}
+                    <span class="glitch-layer">${escapeHtml(game.title)}</span>
+                </h2>
+                <p class="carousel-desc">${escapeHtml(game.description)}</p>
+                <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                    <button class="btn-cyber btn-cyber-primary" onclick="openGameModal(${game.id})">
+                        ${game.price === 0 ? 'RESGATAR GRÁTIS' : 'COMPRAR AGORA ›'}
+                    </button>
+                    <button class="btn-cyber btn-cyber-secondary" onclick="addToCart(${game.id}); showToast('${escapeHtml(game.title)} adicionado!', 'success');">
+                        🛒 ADICIONAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function setCarouselItem(index) {
+    const featured = games.slice(0, 3);
+    if (index < 0) index = featured.length - 1;
+    if (index >= featured.length) index = 0;
+    currentCarouselIndex = index;
+    const main = document.getElementById('carousel-main');
+    if (main) main.innerHTML = renderCarouselItem(featured[index], index);
+    document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+}
+
+function nextCarousel() { setCarouselItem(currentCarouselIndex + 1); }
+function prevCarousel() { setCarouselItem(currentCarouselIndex - 1); }
+
+function renderStore(container) {
+    container.innerHTML = `
+        <section class="section" style="padding-top: 8rem;">
+            <div class="section-header">
+                <h2 class="section-title">◢ Loja ◣</h2>
+                <a href="#" class="section-link" onclick="showToast('Filtros avançados em breve!', 'info')">Filtros ›</a>
+            </div>
+            <div class="filters">
+                <button class="filter-btn active" onclick="filterGames('all', this)">Todos</button>
+                <button class="filter-btn" onclick="filterGames('RPG', this)">RPG</button>
+                <button class="filter-btn" onclick="filterGames('Ação', this)">Ação</button>
+                <button class="filter-btn" onclick="filterGames('Estratégia', this)">Estratégia</button>
+                <button class="filter-btn" onclick="filterGames('Corrida', this)">Corrida</button>
+                <button class="filter-btn" onclick="filterGames('FPS', this)">FPS</button>
+                <button class="filter-btn" onclick="filterGames('Luta', this)">Luta</button>
+                <button class="filter-btn" onclick="filterGames('free', this)">Game Pass</button>
+            </div>
+            <div class="games-grid" id="store-grid">
+                ${games.map(g => createGameCard(g)).join('')}
+            </div>
+        </section>
+    `;
+}
+
+function renderLibrary(container) {
+    if (!currentUser) {
+        container.innerHTML = `
+            <section class="section" style="padding-top: 8rem; text-align: center; min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px var(--neon-yellow));">📚</div>
+                <h2 style="font-family: Orbitron; font-size: 1.5rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Sua Biblioteca</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem;">Faça login para ver seus jogos</p>
+                <button class="btn-cyber btn-cyber-primary" onclick="openAuthModal('login')">Entrar</button>
+            </section>
+        `;
+        return;
+    }
+    const userGames = library.map(id => games.find(g => g.id === id)).filter(Boolean);
+    if (userGames.length === 0) {
+        container.innerHTML = `
+            <section class="section" style="padding-top: 8rem; text-align: center; min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px var(--neon-cyan));">🎮</div>
+                <h2 style="font-family: Orbitron; font-size: 1.5rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Sua Biblioteca</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem;">Você ainda não tem jogos. Visite a loja!</p>
+                <button class="btn-cyber btn-cyber-primary" onclick="navigateTo('store')">Ir para Loja ›</button>
+            </section>
+        `;
+        return;
+    }
+    container.innerHTML = `
+        <section class="section" style="padding-top: 8rem;">
+            <div class="section-header">
+                <h2 class="section-title">◢ Biblioteca ◣</h2>
+                <span style="color: var(--text-secondary); font-family: Orbitron; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;">${userGames.length} JOGO(S)</span>
+            </div>
+            <div class="library-grid">
+                ${userGames.map(g => `
+                    <div class="library-card">
+                        <div class="library-card-image">
+                            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;background:${g.bgGradient};">${g.image}</div>
+                            <div class="library-card-overlay">
+                                <button class="btn-cyber btn-cyber-primary" onclick="showToast('Iniciando ${escapeHtml(g.title)}...', 'success')">▶ JOGAR</button>
+                            </div>
+                        </div>
+                        <div class="library-card-content">
+                            <div class="library-card-title">${escapeHtml(g.title)}</div>
+                            <div class="library-card-meta">
+                                <span style="color: var(--neon-cyan); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px;">${g.genre}</span>
+                                <span class="playtime-badge">⏱ ${g.playtime}h</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </section>
+    `;
+}
+
+function createGameCard(game) {
+    const inCart = cart.some(item => item.id === game.id);
+    const inLibrary = library.includes(game.id);
+    const badgeText = game.badge === 'gamepass' ? 'GAME PASS' : game.badge === 'new' ? 'NOVO' : game.badge === 'sale' ? 'PROMO' : '';
+    return `
+        <div class="game-card" onclick="openGameModal(${game.id})">
+            <div class="game-card-image" style="background: ${game.bgGradient};">
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:5rem;filter: drop-shadow(0 0 20px ${game.color});">${game.image}</div>
+                ${badgeText ? `<span class="game-card-badge badge-${game.badge}">${badgeText}</span>` : ''}
+            </div>
+            <div class="game-card-content">
+                <div class="game-card-title">${escapeHtml(game.title)}</div>
+                <div class="game-card-meta">
+                    <span class="game-card-genre">${game.genre}</span>
+                    <span class="game-card-rating">⭐ ${game.rating}</span>
+                </div>
+                <div class="game-card-footer">
+                    <div class="game-card-price">
+                        ${game.originalPrice ? `<span class="original">${formatPrice(game.originalPrice)}</span>` : ''}
+                        ${formatPrice(game.price)}
+                    </div>
+                    <button class="btn-add-cart ${inCart ? 'in-cart' : ''} ${inLibrary ? 'in-library' : ''}" 
+                            onclick="event.stopPropagation(); ${inLibrary ? '' : inCart ? 'removeFromCart(' + game.id + ')' : 'addToCart(' + game.id + ')'}">
+                        ${inLibrary ? '✓ NA BIBLIOTECA' : inCart ? '✓ NO CARRINHO' : game.price === 0 ? 'RESGATAR' : 'ADICIONAR'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function filterGames(genre, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filtered = genre === 'all' ? games : genre === 'free' ? games.filter(g => g.price === 0) : games.filter(g => g.genre === genre);
+    document.getElementById('store-grid').innerHTML = filtered.map(g => createGameCard(g)).join('');
+}
+
+// ============================================
+// MODAIS
+// ============================================
+function openGameModal(gameId) {
+    const game = games.find(g => g.id === gameId);
+    if (!game) return;
+    const inCart = cart.some(item => item.id === game.id);
+    const inLibrary = library.includes(game.id);
+    document.getElementById('game-modal-header').innerHTML = `
+        <button class="modal-close" onclick="closeModal('game-modal')">✕</button>
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: ${game.bgGradient};">
+            <span style="font-size: 10rem; filter: drop-shadow(0 0 40px ${game.color});">${game.image}</span>
+        </div>
+        <div class="modal-header-overlay"></div>
+    `;
+    document.getElementById('modal-body').innerHTML = `
+        <h2 class="modal-title">${escapeHtml(game.title)}</h2>
+        <div class="modal-meta">
+            <span class="modal-meta-item">🎮 ${game.genre}</span>
+            <span class="modal-meta-item">⭐ ${game.rating}/5.0</span>
+            <span class="modal-meta-item">📅 2026</span>
+            <span class="modal-meta-item">💾 85GB</span>
+        </div>
+        <p class="modal-description">${escapeHtml(game.description)} Uma experiência definitiva que redefine o gênero. Com gráficos de última geração e mecânicas inovadoras, este é um dos títulos mais aguardados do ano.</p>
+        <div class="modal-features">
+            ${game.features.map(f => `<div class="feature-item">${escapeHtml(f)}</div>`).join('')}
+        </div>
+        <div class="modal-price-box">
+            <div class="modal-price">
+                ${game.originalPrice ? `<span class="original">${formatPrice(game.originalPrice)}</span>` : ''}
+                ${formatPrice(game.price)}
+            </div>
+            <div>
+                ${inLibrary ? 
+                    `<button class="btn-cyber btn-cyber-primary" disabled style="opacity: 0.5;">✓ NA BIBLIOTECA</button>` :
+                    `<button class="btn-cyber btn-cyber-primary" onclick="${inCart ? 'removeFromCart(' + game.id + ')' : 'addToCart(' + game.id + ')'}; closeModal('game-modal');">
+                        ${inCart ? 'REMOVER DO CARRINHO' : game.price === 0 ? 'RESGATAR GRÁTIS' : 'ADICIONAR AO CARRINHO'}
+                    </button>`
+                }
+            </div>
+        </div>
+    `;
+    document.getElementById('game-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function openAuthModal(tab) {
+    document.getElementById('auth-modal').classList.add('active');
+    switchAuthTab(tab);
+    document.body.style.overflow = 'hidden';
+}
+
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    document.querySelector(`.auth-tab[onclick="switchAuthTab('${tab}')"]`).classList.add('active');
+    document.getElementById(tab + '-form').classList.add('active');
+}
+
+// ============================================
+// CARRINHO
+// ============================================
+function toggleCart() {
+    document.getElementById('cart-sidebar').classList.toggle('open');
+}
+
+function addToCart(gameId) {
+    const game = games.find(g => g.id === gameId);
+    if (!game || cart.some(item => item.id === gameId)) return;
+    cart.push(game);
+    saveCart();
+    updateCartUI();
+    showToast(game.title + ' adicionado ao carrinho!', 'success');
+}
+
+function removeFromCart(gameId) {
+    cart = cart.filter(item => item.id !== gameId);
+    saveCart();
+    updateCartUI();
+    showToast('Item removido do carrinho', 'info');
+    const storeGrid = document.getElementById('store-grid');
+    if (storeGrid) {
+        const activeFilter = document.querySelector('.filter-btn.active');
+        const genre = activeFilter ? activeFilter.textContent : 'Todos';
+        filterGames(genre === 'Todos' ? 'all' : genre === 'Game Pass' ? 'free' : genre, activeFilter);
+    }
+}
+
+function saveCart() {
+    localStorage.setItem('gamehub_cart', JSON.stringify(cart));
+}
+
+function updateCartUI() {
+    const cartItems = document.getElementById('cart-items');
+    const cartFooter = document.getElementById('cart-footer');
+    const cartCount = document.getElementById('cart-count');
+    cartCount.textContent = cart.length;
+    if (cart.length === 0) {
+        cartItems.innerHTML = `
+            <div class="cart-empty">
+                <div class="cart-empty-icon">🛒</div>
+                <p>Seu carrinho está vazio</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Adicione alguns jogos!</p>
+            </div>
+        `;
+        cartFooter.style.display = 'none';
+        return;
+    }
+    cartItems.innerHTML = cart.map(item => `
+        <div class="cart-item">
+            <div class="cart-item-image" style="background: ${item.bgGradient};"><span style="font-size: 2rem;">${item.image}</span></div>
+            <div class="cart-item-info">
+                <div class="cart-item-title">${escapeHtml(item.title)}</div>
+                <div class="cart-item-price">${formatPrice(item.price)}</div>
+            </div>
+            <button class="cart-item-remove" onclick="removeFromCart(${item.id})">🗑️</button>
+        </div>
+    `).join('');
+    cartFooter.style.display = 'block';
+    updateCartTotals();
+}
+
+function updateCartTotals() {
+    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+    const discountEl = document.getElementById('cart-discount');
+    const discountRow = document.getElementById('cart-discount-row');
+    let discount = 0;
+    if (discountEl && discountEl.dataset.value) {
+        discount = parseFloat(discountEl.dataset.value);
+    }
+    document.getElementById('cart-subtotal').textContent = formatPrice(subtotal);
+    if (discountRow) discountRow.style.display = discount > 0 ? 'flex' : 'none';
+    if (discountEl) discountEl.textContent = '- ' + formatPrice(discount);
+    document.getElementById('cart-total').textContent = formatPrice(Math.max(0, subtotal - discount));
+}
+
+function applyCoupon() {
+    const code = document.getElementById('coupon-code').value.trim().toUpperCase();
+    const discountEl = document.getElementById('cart-discount');
+    if (code === 'GAMEHUB10') {
+        const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+        discountEl.dataset.value = subtotal * 0.10;
+        showToast('Cupom GAMEHUB10 aplicado! 10% OFF!', 'success');
+    } else if (code === 'BEMVINDO') {
+        const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+        discountEl.dataset.value = subtotal * 0.20;
+        showToast('Cupom BEMVINDO aplicado! 20% OFF!', 'success');
+    } else {
+        delete discountEl.dataset.value;
+        showToast('Cupom inválido!', 'error');
+    }
+    updateCartTotals();
+}
+
+// ============================================
+// CHECKOUT
+// ============================================
+function openCheckout() {
+    if (cart.length === 0) {
+        showToast('Seu carrinho está vazio!', 'warning');
+        return;
+    }
+    if (!currentUser) {
+        showToast('Faça login para finalizar!', 'warning');
+        openAuthModal('login');
+        return;
+    }
+    toggleCart();
+    document.getElementById('checkout-modal').classList.add('active');
+    renderCheckout();
+    document.body.style.overflow = 'hidden';
+}
+
+function renderCheckout() {
+    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+    const discountEl = document.getElementById('cart-discount');
+    const discount = discountEl && discountEl.dataset.value ? parseFloat(discountEl.dataset.value) : 0;
+    const total = Math.max(0, subtotal - discount);
+    document.getElementById('checkout-body').innerHTML = `
+        <div class="checkout-steps">
+            <div class="checkout-step completed"><div class="step-number">✓</div><span class="step-label">Carrinho</span></div>
+            <div class="checkout-step active"><div class="step-number">2</div><span class="step-label">Pagamento</span></div>
+            <div class="checkout-step"><div class="step-number">3</div><span class="step-label">Confirmação</span></div>
+        </div>
+        <div class="payment-methods">
+            <div class="payment-method selected" onclick="selectPayment(this)">
+                <div class="payment-method-icon">💳</div>
+                <div class="payment-method-name">Cartão</div>
+            </div>
+            <div class="payment-method" onclick="selectPayment(this)">
+                <div class="payment-method-icon">📱</div>
+                <div class="payment-method-name">PIX</div>
+            </div>
+            <div class="payment-method" onclick="selectPayment(this)">
+                <div class="payment-method-icon">🏦</div>
+                <div class="payment-method-name">Boleto</div>
+            </div>
+        </div>
+        <div class="order-summary">
+            ${cart.map(item => `
+                <div class="order-summary-item">
+                    <span>${escapeHtml(item.title)}</span>
+                    <span>${formatPrice(item.price)}</span>
+                </div>
+            `).join('')}
+            ${discount > 0 ? `<div class="order-summary-item" style="color: var(--neon-green);"><span>Desconto</span><span>- ${formatPrice(discount)}</span></div>` : ''}
+            <div class="order-summary-item"><span>Total</span><span>${formatPrice(total)}</span></div>
+        </div>
+        <button class="btn-cyber btn-cyber-primary" style="width: 100%;" onclick="processPayment()">◢ CONFIRMAR PAGAMENTO ◣</button>
+    `;
+}
+
+function selectPayment(el) {
+    document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function processPayment() {
+    const btn = document.querySelector('#checkout-body .btn-cyber-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite; margin-right: 8px;">⟳</span> PROCESSANDO...';
+    setTimeout(() => {
+        cart.forEach(item => {
+            if (!library.includes(item.id)) library.push(item.id);
+        });
+        localStorage.setItem('gamehub_library', JSON.stringify(library));
+        cart = [];
+        saveCart();
+        updateCartUI();
+        showOrderSuccess();
+    }, 2000);
+}
+
+function showOrderSuccess() {
+    const purchasedGames = library.slice(-3);
+    const userGames = purchasedGames.map(id => games.find(g => g.id === id)).filter(Boolean);
+    document.getElementById('checkout-body').innerHTML = `
+        <div class="order-success">
+            <div class="order-success-icon">🎉</div>
+            <h3>◢ COMPRA REALIZADA ◣</h3>
+            <p>Seus jogos foram adicionados à biblioteca.</p>
+            <div class="order-games-list">
+                ${userGames.map(g => `
+                    <div class="order-game-item">
+                        <span style="font-size: 2rem; filter: drop-shadow(0 0 10px ${g.color});">${g.image}</span>
+                        <span>${escapeHtml(g.title)}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <button class="btn-cyber btn-cyber-primary" onclick="closeModal('checkout-modal'); navigateTo('library');">IR PARA BIBLIOTECA ›</button>
+        </div>
+    `;
+}
+
+// ============================================
+// AUTENTICAÇÃO
+// ============================================
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    const btnText = document.getElementById('login-btn-text');
+    document.querySelectorAll('.form-error').forEach(el => el.classList.remove('visible'));
+    document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+    btn.disabled = true;
+    btnText.textContent = 'ENTRANDO...';
+    setTimeout(() => {
+        const users = JSON.parse(localStorage.getItem('gamehub_users') || '[]');
+        const user = users.find(u => u.email === email && u.password === btoa(password));
+        if (!user) {
+            btn.disabled = false;
+            btnText.textContent = 'ENTRAR';
+            document.getElementById('login-password').classList.add('error');
+            document.getElementById('login-password-error').classList.add('visible');
+            showToast('Email ou senha incorretos!', 'error');
+            return;
+        }
+        currentUser = { id: user.id, name: user.name, email: user.email, username: user.username };
+        localStorage.setItem('gamehub_user', JSON.stringify(currentUser));
+        btn.disabled = false;
+        btnText.textContent = 'ENTRAR';
+        closeModal('auth-modal');
+        updateAuthUI();
+        showToast('Bem-vindo de volta, ' + user.name.split(' ')[0] + '!', 'success');
+        document.getElementById('login-form').reset();
+    }, 1000);
+}
+
+function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('register-name').value;
+    const username = document.getElementById('register-username').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const confirm = document.getElementById('register-confirm').value;
+    const btn = document.getElementById('register-btn');
+    const btnText = document.getElementById('register-btn-text');
+    document.querySelectorAll('.form-error').forEach(el => el.classList.remove('visible'));
+    document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        document.getElementById('register-email').classList.add('error');
+        document.getElementById('register-email-error').classList.add('visible');
+        return;
+    }
+    if (password.length < 8) {
+        showToast('Senha deve ter pelo menos 8 caracteres!', 'error');
+        document.getElementById('register-password').classList.add('error');
+        return;
+    }
+    if (password !== confirm) {
+        document.getElementById('register-confirm').classList.add('error');
+        document.getElementById('register-confirm-error').classList.add('visible');
+        return;
+    }
+    btn.disabled = true;
+    btnText.textContent = 'CRIANDO CONTA...';
+    setTimeout(() => {
+        const users = JSON.parse(localStorage.getItem('gamehub_users') || '[]');
+        if (users.some(u => u.email === email)) {
+            btn.disabled = false;
+            btnText.textContent = 'CRIAR CONTA';
+            showToast('Este email já está cadastrado!', 'error');
+            return;
+        }
+        if (users.some(u => u.username === username)) {
+            btn.disabled = false;
+            btnText.textContent = 'CRIAR CONTA';
+            showToast('Este nome de usuário já existe!', 'error');
+            return;
+        }
+        const newUser = {
+            id: Date.now(), name, username, email,
+            password: btoa(password),
+            createdAt: new Date().toISOString()
+        };
+        users.push(newUser);
+        localStorage.setItem('gamehub_users', JSON.stringify(users));
+        currentUser = { id: newUser.id, name: newUser.name, email: newUser.email, username: newUser.username };
+        localStorage.setItem('gamehub_user', JSON.stringify(currentUser));
+        btn.disabled = false;
